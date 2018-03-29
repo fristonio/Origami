@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from allauth.socialaccount.models import SocialAccount, SocialToken, SocialApp
 from django.contrib.sites.models import Site
 import os
+from django.db.models import Count
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
@@ -30,7 +31,7 @@ class DemoViewSet(ModelViewSet):
     serializer_class = DemoSerializer
 
     def get_queryset(self):
-        return Demo.objects.all()
+        return Demo.objects.all().annotate(stars=Count('demostars'))
 
 
 class InputComponentViewSet(ModelViewSet):
@@ -161,7 +162,7 @@ def get_all_user_demos(request, id):
     Returns properties of all demos for the
     user identified by the given id.
     """
-    demos = Demo.objects.filter(user_id=id)
+    demos = Demo.objects.filter(user_id=id).annotate(stars=Count('demostars'))
     serialize = DemoSerializer(demos, many=True)
     return Response(serialize.data, status=response_status.HTTP_200_OK)
 
@@ -178,11 +179,11 @@ def get_all_demos(request):
     search_term = request.query_params.get('search_term', None)
     demos = []
     if search_by == "demo":
-        demos = Demo.objects.filter(name__icontains=search_term)
+        demos = Demo.objects.filter(name__icontains=search_term).annotate(stars=Count('demostars'))
     else:
         try:
             user = User.objects.get(username__iexact=search_term)
-            demos = Demo.objects.filter(user_id=user.id)
+            demos = Demo.objects.filter(user_id=user.id).annotate(stars=Count('demostars'))
         except User.DoesNotExist:
             demos = []
     serialize = DemoSerializer(demos, many=True)
@@ -576,3 +577,40 @@ def upload_sample_input(request):
     sample_inputs = SampleInput.objects.filter(demo=demo)
     serialize = SampleInputSerializer(sample_inputs, many=True)
     return Response(serialize.data, status=response_status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST', 'DELETE'])
+def custom_stars_controller(request, type, id):
+    """
+    Get all the stars corresponding to type(demo/user) id.
+
+    """
+    if request.method == "GET":
+        if type == "demo":
+            demo_stars = DemoStars.objects.filter(demo=id)
+        elif type == "user":
+            demo_stars = DemoStars.objects.filter(user=id)
+        else:
+            return Response({"text": "Not valid type"})
+        serialize = DemoStarsSerializer(demo_stars, many=True)
+        return Response(serialize.data, status=response_status.HTTP_200_OK)
+
+    elif request.method == "DELETE" or request.method =="POST":
+        if type and id and type == "demo":
+            demo_star = DemoStars.objects.get(demo=id)
+            if request.user.is_authenticated:
+                demo = Demo.objects.get(id=id)
+                user = User.objects.get(id=request.user.id)
+                if not demo_star and request.method == "POST":
+
+                    DemoStars.objects.create(demo=id, user=)
+                    return Response("Demo starred", status=response_status.HTTP_201_CREATED)
+                elif demo_star and request.method == "DELETE":
+                    demo_star.delete()
+                    return Response("Demo deleted", status=status.HTTP_409_CONFLICT)
+                else:
+                    return Response("Request method not allowed", status=HTTP_405_METHOD_NOT_ALLOWED)
+            else:
+                return Response("Unauthorized", status=HTTP_401_UNAUTHORIZED)
+        else:
+            return Response("Not a valid type : {}".format(type), status=HTTP_400_BAD_REQUEST)

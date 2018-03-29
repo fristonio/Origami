@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from api.models import Demo, InputComponent, OutputComponent, Permalink, RootSettings, SampleInput
+from api.models import Demo, InputComponent, OutputComponent, Permalink, RootSettings, SampleInput, DemoStars
 
 
 class DemoSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=False)
+    stars = serializers.IntegerField(read_only=False, required=False)
 
     class Meta:
         model = Demo
@@ -48,3 +49,11 @@ class SampleInputSerializer(serializers.ModelSerializer):
     class Meta:
         model = SampleInput
         fields = ('id', 'type_of_input', 'value')
+
+
+class DemoStarsSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=False, required=False)
+
+    class Meta:
+        model = DemoStars
+        fields = '__all__'

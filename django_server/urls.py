@@ -40,6 +40,7 @@ urlpatterns = [
     url(r'api/is_cloudcv', is_cloudcv),
     url(r'api/rootsettings', root_settings),
     url(r'api/getpermalink/([A-Za-z0-9]+)/?$', get_permalink),
+    url(r'api/stars/(\d+)/(\d+)', custom_stars_controller),
     url(r'api/demo/user/(\d+)', get_all_user_demos),
     url(r'api/demos/$', get_all_demos),
     url(r'api/(input|output)component/?(\d*)/?(\d*)',

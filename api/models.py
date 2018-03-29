@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.contrib.auth.models import User
 import json
 # Create your models here.
 
@@ -141,3 +142,15 @@ class SampleInput(models.Model):
     demo = models.ForeignKey(Demo)
     type_of_input = models.IntegerField()
     value = models.CharField(max_length=300)
+
+
+class DemoStars(models.Model):
+    """
+    This model stores the stars for a demo.
+
+    Fields:
+        demo: Foreign key to the demo that the star belongs to
+        user_id: Foreign Key to user that star belongs to
+    """
+    demo = models.ForeignKey(Demo)
+    user = models.ForeignKey(User)
